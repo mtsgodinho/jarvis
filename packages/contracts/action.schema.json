@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ActionProposal",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "kind",
+    "summary",
+    "params"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "kind": {
+      "enum": [
+        "system.status",
+        "browser.read",
+        "desktop.open_app",
+        "files.read"
+      ]
+    },
+    "summary": {
+      "type": "string",
+      "maxLength": 300
+    },
+    "params": {
+      "type": "object"
+    }
+  }
+}

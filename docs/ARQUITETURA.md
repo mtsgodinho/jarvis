@@ -1,0 +1,8 @@
+# Arquitetura pretendida
+Painel → sessão autenticada → orquestrador → proposta tipada → política → aprovação humana quando exigida → executor específico → resultado verificável.
+
+Implementado: painel local com sessão autenticada e CSRF, aprovações demonstrativas, status, conversa com Gemini e ferramentas locais allowlisted no Windows. As aprovações demonstrativas não estão vinculadas às ações reais do executor. Chrome e perfis conhecidos são interpretados localmente. Para outras ferramentas, o provedor de IA produz um envelope JSON de resposta ou intenção; o servidor valida ação e parâmetros contra `packages/contracts/local-actions.mjs` e o executor revalida antes de iniciar processos.
+Reservado: um orquestrador genérico de propostas/aprovações e integrações externas além das URLs fixas permitidas.
+Gemini não recebe função de execução nem caminhos/comandos. O executor aceita somente aplicativos, pastas, sites, buscas e teclas multimídia predefinidos; processos usam `spawn` com `shell: false`. A camada administrativa de reiniciar/desligar permanece separada.
+A versão inicial usa JavaScript ESM/Node e frontend estático. Gemini, pelo SDK oficial `@google/genai`, é o provedor principal; OpenRouter é a alternativa seguinte e OpenAI é opcional, somente quando habilitada. Todas as credenciais vêm do `.env` no backend e nunca chegam ao navegador. O reconhecimento contínuo por “Jarvis” e a síntese usam APIs do navegador; somente a transcrição após a ativação usa a rota de chat existente. oneEuro.ts é referência TypeScript não compilada; voz LiveKit continua desligada.
+Módulo de rede reaproveitado é independente dos futuros controles de navegador. Não confundir bloqueio de HTTP Node com sandbox de navegador ou isolamento do sistema operacional.

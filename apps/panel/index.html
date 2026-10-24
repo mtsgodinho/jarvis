@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1">
+	<meta name="theme-color" content="#050b12">
+	<title>JARVIS · Mateus</title>
+	<link rel="stylesheet" href="/style.css">
+</head>
+<body data-state="off">
+	<div class="app-frame">
+		<aside class="sidebar" aria-label="Navegação principal">
+			<a class="brand-lockup" href="#cockpit" aria-label="JARVIS, início">
+				<span class="brand-mark" aria-hidden="true">J</span>
+				<span class="brand-name"><strong>JARVIS</strong><small>TECH VIEW</small></span>
+			</a>
+			<nav class="main-nav">
+				<p class="nav-label">ASSISTENTE</p>
+				<a class="nav-item active" href="#cockpit" aria-label="Início" aria-current="page"><span class="nav-icon" aria-hidden="true">⌂</span><span>Início</span></a>
+				<a id="nav-chat" class="nav-item" href="#chat-drawer" aria-label="Chat"><span class="nav-icon" aria-hidden="true">▤</span><span>Chat</span></a>
+				<p class="nav-label nav-label-spaced">AMBIENTE</p>
+				<button class="nav-item" type="button" disabled aria-disabled="true" aria-label="Comandos"><span class="nav-icon" aria-hidden="true">⌘</span><span>Comandos</span></button>
+				<button class="nav-item" type="button" disabled aria-disabled="true" aria-label="Aplicativos"><span class="nav-icon" aria-hidden="true">▦</span><span>Aplicativos</span></button>
+				<button class="nav-item" type="button" disabled aria-disabled="true" aria-label="Automação"><span class="nav-icon" aria-hidden="true">⟳</span><span>Automação</span></button>
+				<button class="nav-item" type="button" disabled aria-disabled="true" aria-label="Projetos"><span class="nav-icon" aria-hidden="true">◇</span><span>Projetos</span></button>
+				<button class="nav-item" type="button" disabled aria-disabled="true" aria-label="Sistema"><span class="nav-icon" aria-hidden="true">⚙</span><span>Sistema</span></button>
+				<button class="nav-item" type="button" disabled aria-disabled="true" aria-label="Internet"><span class="nav-icon" aria-hidden="true">◎</span><span>Internet</span></button>
+				<button class="nav-item" type="button" disabled aria-disabled="true" aria-label="Multimídia"><span class="nav-icon" aria-hidden="true">♫</span><span>Multimídia</span></button>
+				<button class="nav-item" type="button" disabled aria-disabled="true" aria-label="Notas"><span class="nav-icon" aria-hidden="true">▧</span><span>Notas</span></button>
+				<button class="nav-item" type="button" disabled aria-disabled="true" aria-label="Configurações"><span class="nav-icon" aria-hidden="true">⚙</span><span>Configurações</span></button>
+			</nav>
+			<div class="sidebar-account"><span class="account-avatar" aria-hidden="true">M</span><span><strong>MATEUS</strong><small>SESSÃO LOCAL</small></span><span class="account-led" aria-hidden="true"></span></div>
+		</aside>
+
+		<div class="main-column">
+			<header class="topbar">
+				<div class="topbar-context"><span class="eyebrow">JARVIS TECH VIEW</span><span class="topbar-divider"></span><span class="topbar-subtitle">ASSISTENTE PESSOAL</span></div>
+				<div class="topbar-actions">
+					<div class="topbar-status"><span class="status-lamp" aria-hidden="true"></span><span id="status" role="status">Verificando servidor local…</span></div>
+					<section id="administration" class="admin-controls" aria-label="Controles do Jarvis" hidden>
+						<button id="restart-jarvis" class="icon-button" type="button" aria-label="Reiniciar Jarvis" title="Reiniciar Jarvis">⟳</button>
+						<button id="shutdown-jarvis" class="icon-button power-button" type="button" aria-label="Desligar Jarvis" title="Desligar Jarvis">⏻</button>
+					</section>
+					<button id="logout" class="quiet-button" type="button" hidden>Encerrar sessão</button>
+				</div>
+			</header>
+
+			<main id="cockpit">
+				<section id="login" class="login-view" aria-labelledby="login-title">
+					<div class="login-copy"><p class="eyebrow">CANAL PRIVADO · LOOPBACK</p><h1 id="login-title">JARVIS<span> online.</span></h1><p>Conecte-se para iniciar uma sessão pessoal neste dispositivo.</p></div>
+					<form id="login-form" class="login-form"><label for="code">Código de acesso</label><input id="code" type="password" autocomplete="off" required maxlength="48"><button class="primary-button" type="submit">Estabelecer conexão <span aria-hidden="true">↗</span></button><small>O código está disponível na janela do launcher.</small></form>
+				</section>
+
+				<section id="conversation" class="workspace" hidden>
+					<section id="assistant-stage" class="assistant-stage" aria-label="Cockpit Jarvis">
+						<aside class="telemetry-panel" aria-label="Estado dos serviços configurados">
+							<div class="panel-heading"><span class="panel-icon" aria-hidden="true">⌬</span><div><small>CANAL</small><strong>Conexões</strong></div></div>
+							<div class="telemetry-reading"><span class="reading-index">01</span><div><small>PROVEDORES DISPONÍVEIS</small><strong id="gemini-state">Não conectado</strong></div><span class="reading-led" aria-hidden="true"></span></div>
+							<div class="telemetry-reading"><span class="reading-index">02</span><div><small>ESTADO DO JARVIS</small><strong id="voice-state" class="voice-state" role="status" aria-live="polite" data-state="off">Microfone desligado</strong></div><span class="state-marker" aria-hidden="true"></span></div>
+							<div class="local-capability"><span class="local-icon" aria-hidden="true">⌖</span><span><small>AMBIENTE</small><strong>Execução local</strong></span><b>ATIVO</b></div>
+						</aside>
+
+						<div class="core-console">
+							<div class="core-heading"><span class="eyebrow">NÚCLEO DE PRESENÇA</span><span class="core-coordinate"><i aria-hidden="true"></i> LOCAL</span></div>
+							<div id="assistant-core" class="assistant-core" data-state="off" role="img" aria-label="Núcleo Jarvis em espera">
+								<span class="core-halo halo-one" aria-hidden="true"></span><span class="core-halo halo-two" aria-hidden="true"></span>
+								<span class="core-orbit orbit-outer" aria-hidden="true"></span><span class="core-orbit orbit-middle" aria-hidden="true"></span><span class="core-orbit orbit-inner" aria-hidden="true"></span>
+								<span class="core-orbit orbit-dashed" aria-hidden="true"></span><span class="core-tick tick-one" aria-hidden="true"></span><span class="core-tick tick-two" aria-hidden="true"></span><span class="core-tick tick-three" aria-hidden="true"></span><span class="core-tick tick-four" aria-hidden="true"></span>
+								<span class="core-particle particle-one" aria-hidden="true"></span><span class="core-particle particle-two" aria-hidden="true"></span><span class="core-particle particle-three" aria-hidden="true"></span><span class="core-particle particle-four" aria-hidden="true"></span>
+								<svg class="avatar-portrait" viewBox="0 0 320 360" aria-hidden="true" focusable="false">
+									<defs><linearGradient id="avatar-stroke" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9afcff"/><stop offset=".48" stop-color="#36c9ff"/><stop offset="1" stop-color="#8b6dff"/></linearGradient><radialGradient id="avatar-fill"><stop offset="0" stop-color="#155372" stop-opacity=".48"/><stop offset="1" stop-color="#061421" stop-opacity=".96"/></radialGradient></defs>
+									<path class="avatar-silhouette" d="M160 19 222 42 264 92 276 161 257 230 224 283 194 326 160 344 126 326 96 283 63 230 44 161 56 92 98 42Z" fill="url(#avatar-fill)" stroke="url(#avatar-stroke)" stroke-width="2"/>
+									<path d="M160 25 160 337M67 103 253 103M49 165 271 165M69 229 251 229M102 46 126 326M218 46 194 326M58 126 263 202M57 202 263 126M88 75 232 257M232 75 88 257" class="avatar-mesh"/>
+									<path d="M91 145 126 132 151 145M169 145 194 132 229 145M100 159 128 153 148 160M172 160 192 153 220 159M160 145 151 202 160 212 169 202ZM123 235 144 245 160 247 176 245 197 235M139 276 160 281 181 276" class="avatar-detail"/>
+									<path d="M81 112 52 136 73 147M239 112 268 136 247 147M88 224 67 247 93 256M232 224 253 247 227 256" class="avatar-circuit"/>
+									<circle cx="128" cy="158" r="4" class="avatar-eye"/><circle cx="192" cy="158" r="4" class="avatar-eye"/>
+								</svg>
+								<span class="core-scan" aria-hidden="true"></span><span class="core-ring-light" aria-hidden="true"></span>
+							</div>
+							<div class="core-wordmark"><strong>JARVIS</strong><span>TECH VIEW</span></div>
+							<div class="core-caption"><span class="live-dot" aria-hidden="true"></span><span id="core-state-label">Sistema em espera</span></div>
+							<div id="voice-waveform" class="voice-waveform" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+							<div class="core-controls"><div class="voice-mode-controls"><button id="voice-enable" class="mic-button" type="button" aria-label="Ativar Jarvis por voz"><svg class="mic-symbol" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3m-4 0h8"/></svg><span>Ativar Jarvis</span></button><button id="voice-disable" class="quiet-button" type="button" disabled>Desativar Jarvis</button></div><button id="voice-start" class="quiet-button manual-mic" type="button" aria-label="Ouvir uma frase" title="Ouvir uma frase">Falar uma frase</button><button id="voice-stop" class="quiet-button stop-listening" type="button" hidden>Interromper escuta</button><span id="microphone-indicator" class="microphone-indicator" data-active="false" role="status">Microfone desligado</span><p class="voice-privacy-note">O reconhecimento pode usar o serviço do navegador. Apenas texto após “Jarvis” é enviado ao chat.</p><div class="resident-voice-controls"><span id="resident-voice-status" role="status" aria-live="polite">Residente desligado</span><div><button id="resident-voice-enable" class="quiet-button" type="button">Configurar escuta residente</button><button id="resident-voice-disable" class="quiet-button" type="button" disabled>Desativar residente</button></div><small>Reconhecimento e voz locais do Windows; o microfone só liga após consentimento.</small></div><p id="resident-voice-error" class="chat-error" role="alert" hidden></p><p id="voice-error" class="chat-error" role="alert" hidden></p></div>
+						</div>
+
+						<aside class="exchange-panel" aria-label="Última troca da conversa">
+							<div class="panel-heading"><span class="panel-icon" aria-hidden="true">⌁</span><div><small>INTERAÇÃO</small><strong>Conversa recente</strong></div></div>
+							<section class="exchange-block"><p class="eyebrow">SUA ÚLTIMA FALA</p><p id="last-utterance" class="exchange-text empty-value">Aguardando sua mensagem</p></section>
+							<section class="exchange-block response-block"><p class="eyebrow">RESPOSTA DO JARVIS</p><p id="current-reply" class="exchange-text empty-value">O canal está pronto</p></section>
+							<div class="exchange-footer"><span>PORTUGUÊS · BRASIL</span><span class="separator-dot"></span><span>SESSÃO PRIVADA</span></div>
+						</aside>
+					</section>
+
+					<section class="interaction-dock" aria-label="Enviar mensagem ao Jarvis">
+						<div class="dock-leading"><span class="dock-led" aria-hidden="true"></span><span>CANAL DE VOZ E TEXTO</span></div>
+						<form id="chat-form" class="message-form"><label class="visually-hidden" for="chat-message">Mensagem</label><textarea id="chat-message" rows="1" maxlength="2500" placeholder="Fale comigo, Mateus..." required></textarea><button id="send-message" class="send-button" type="submit" aria-label="Enviar mensagem" title="Enviar mensagem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 3-7.2 18-3.5-7.3L3 10.2 21 3ZM10.3 13.7 21 3"/></svg></button></form>
+						<div class="dock-footer"><button id="voice-toggle" class="quiet-button speech-toggle" type="button" aria-pressed="false"><svg class="speaker-symbol" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h4l5 4V6l-5 4H4Zm12-1a5 5 0 0 1 0 6m2-9a9 9 0 0 1 0 12"/></svg><span>Respostas faladas: desligadas</span></button><div class="speech-controls"><label for="speech-rate">Velocidade <input id="speech-rate" type="range" min="0.75" max="1.25" step="0.05" value="1" aria-label="Velocidade da fala"><output id="speech-rate-value" for="speech-rate">1,00×</output></label><label for="speech-volume">Volume da voz <input id="speech-volume" type="range" min="0" max="1" step="0.05" value="1" aria-label="Volume da voz"><output id="speech-volume-value" for="speech-volume">100%</output></label></div><div class="quick-prompts" aria-label="Sugestões"><span>Conversa natural</span><span>Ações locais permitidas</span></div></div>
+					</section>
+					<p id="thinking" class="thinking" role="status" hidden><span class="thinking-pulse" aria-hidden="true"></span>Processando...</p>
+					<button id="cancel-action" class="quiet-button" type="button" hidden>Cancelar operação em andamento</button>
+					<p id="chat-error" class="chat-error" role="alert" hidden></p>
+
+					<details id="chat-drawer" class="chat-drawer"><summary><span class="drawer-title"><span class="drawer-icon" aria-hidden="true">▤</span><span><small>CONTEXTO DA SESSÃO</small><strong>Histórico da conversa</strong></span></span><span class="drawer-hint">Abrir histórico <b aria-hidden="true">⌄</b></span></summary><div class="drawer-content"><div class="chat-heading"><p class="eyebrow">MENSAGENS DESTA SESSÃO</p><button id="clear-chat" class="quiet-button" type="button">Limpar conversa</button></div><div id="chat-history" class="chat-history" role="log" aria-live="polite" aria-relevant="additions"></div></div></details>
+				</section>
+
+				<details id="approvals" class="approvals-panel" aria-label="Aprovação de ações" hidden><summary><span class="panel-icon" aria-hidden="true">⌑</span><span>Aprovações de demonstração</span><small>Nenhuma ação será executada</small><b aria-hidden="true">⌄</b></summary><div class="approval-content"><p>Teste de autorização: nada será feito no Windows. Cada pedido expira em 60 segundos e só pode ser resolvido uma vez.</p><button id="demo" class="quiet-button" type="button">Criar pedido de demonstração</button><div id="requests"></div></div></details>
+			</main>
+			<footer class="footer-line"><span>JARVIS / MATEUS</span><span>LOCAL FIRST · PRIVATE SESSION</span></footer>
+		</div>
+	</div>
+	<script type="module" src="/app.js"></script>
+</body>
+</html>

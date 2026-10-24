@@ -1,0 +1,1 @@
+Navegador exclusivo. Antes de habilitar: isolamento de processo e rede, interceptação de todas as requisições, redirecionamentos e WebSockets, controle de downloads, sem cookies do perfil pessoal. O módulo net reaproveitado NÃO protege automaticamente o Chromium.

@@ -1,0 +1,10 @@
+{
+  "assistant": "Jarvis",
+  "owner": "Mateus",
+  "language": "pt-BR",
+  "provider": "disabled",
+  "camera": false,
+  "microphone": false,
+  "memory": false,
+  "desktop": false
+}
