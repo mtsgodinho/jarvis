@@ -1,0 +1,9 @@
+.env
+.env.*
+!.env.example
+node_modules/
+runtime/*
+!runtime/README.md
+**/bin/
+**/obj/
+*.log
