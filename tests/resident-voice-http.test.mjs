@@ -22,7 +22,7 @@ test('resident voice settings are authenticated, CSRF-protected, and consent is 
       this.status = { enabled: false, state: 'disabled', microphoneActive: false };
     },
   };
-  const { server } = createServer({
+  const { server } = createServer({requireActionApproval:false,
     port,
     accessCode: 'resident-test',
     residentVoicePlatform: 'win32',
@@ -49,7 +49,7 @@ test('resident voice settings are authenticated, CSRF-protected, and consent is 
       },
       async stop() {},
     };
-    const { server } = createServer({
+    const { server } = createServer({requireActionApproval:false,
       port,
       accessCode: 'resident-test',
       residentVoicePlatform: 'win32',

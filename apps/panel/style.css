@@ -276,3 +276,16 @@ body[data-state="error"] .voice-waveform i,body[data-state="offline"] .voice-wav
 @media(max-width:700px){.dock-footer{flex-wrap:wrap}.speech-controls{order:3;width:100%;justify-content:space-between}.speech-controls label{flex:1;grid-template-columns:auto minmax(52px,1fr) auto}.speech-controls input{width:100%}}
 @media(max-width:390px){.sidebar{grid-template-columns:34px minmax(0,1fr);gap:8px;padding-inline:8px}.main-nav{gap:1px}.nav-item{min-width:34px;padding-inline:3px}.nav-icon{font-size:16px}.topbar{gap:7px}.topbar-status{max-width:132px;font-size:8px}.assistant-stage{padding:9px}.assistant-core{width:min(75vw,300px)}.telemetry-panel{grid-template-columns:1fr}.telemetry-reading{padding:8px 0}.exchange-footer{font-size:7px}.chat-heading .eyebrow{font-size:7px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+#tools-panel { padding: 18px; margin-block: 12px; }
+#tools-panel details + details { margin-top: 16px; }
+#tools-panel summary { cursor: pointer; padding: 10px 0; }
+#memory-form { display: flex; flex-wrap: wrap; gap: 12px; margin-block: 12px; }
+#memory-form label { display: grid; gap: 6px; flex: 1 1 200px; }
+#memory-items article { padding: 10px 0; border-bottom: 1px solid #244657; overflow-wrap: anywhere; }
+#memory-items button { margin-right: 8px; }
+#diagnostics-output { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 320px; overflow: auto; }
+
+#tool-form { display: grid; gap: 12px; margin-block: 12px; }
+#tool-form label { display: grid; gap: 6px; }
+#tool-result { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 360px; overflow: auto; }
+[hidden] { display: none !important; }

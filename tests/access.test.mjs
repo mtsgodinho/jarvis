@@ -11,7 +11,7 @@ test('aprovação vinculada, expirada e de uso único',()=>{
  const c=s.create('a');assert.equal(s.decide(c.id,'a','reject').state,'rejected');
 });
 test('HTTP autenticação, origem, CSRF, aprovação e logout',async()=>{
- const port=18787,origin=`http://127.0.0.1:${port}`;const {server}=createServer({port,accessCode:'test-code'});
+ const port=18787,origin=`http://127.0.0.1:${port}`;const {server}=createServer({requireActionApproval:false,port,accessCode:'test-code'});
  await new Promise(r=>server.listen(port,'127.0.0.1',r));
  try{
  const req=(path,data,headers={})=>fetch(origin+path,{method:data?'POST':'GET',headers:{...(data?{'Content-Type':'application/json',Origin:origin}:{}),...headers},body:data?JSON.stringify(data):undefined});

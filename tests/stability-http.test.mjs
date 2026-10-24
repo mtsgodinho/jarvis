@@ -10,7 +10,7 @@ async function fixture(options, run) {
   await new Promise(resolve => reservation.listen(0, '127.0.0.1', resolve));
   const port = reservation.address().port;
   await new Promise(resolve => reservation.close(resolve));
-  const app = createServer({
+  const app = createServer({requireActionApproval:false,
     port, accessCode: 'stability-fixture', logger: quiet,
     googleApiKey: '', googleModel: '', openrouterApiKey: '', openaiApiKey: '', openaiEnabled: false,
     memoryStore: { initialize: async () => {}, getFacts: async () => [] },

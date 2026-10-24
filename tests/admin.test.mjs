@@ -4,7 +4,7 @@ import {createServer} from '../apps/local-server/server.mjs';
 
 let nextPort=18850;
 async function withServer(options, run) {
- const port=nextPort++,origin=`http://127.0.0.1:${port}`,{server}=createServer({port,...options});
+ const port=nextPort++,origin=`http://127.0.0.1:${port}`,{server}=createServer({requireActionApproval:false,port,...options});
  await new Promise(resolve=>server.listen(port,'127.0.0.1',resolve));
  const request=async(path,data,headers={})=>{
   const response=await fetch(origin+path,{

@@ -1,11 +1,13 @@
+import { createToolsPanel } from './tools-panel.js';
 import { createApiClient } from './api.js';
 import { createVoiceSession, VOICE_STATES } from './voice-session.js';
 import { selectPortugueseVoice } from './voice-speech.js';
 const $=s=>document.querySelector(s);
 let csrf='',sending=false,reconnecting=false,shuttingDown=false,administrating=false,residentEnabled=false,residentMicrophoneActive=false;
-let instanceId='',chatController=null,interactionVersion=0,chatTimeoutMs=30000,refreshing=false,utteranceActive=null,speechResolver=null;
+let instanceId='',chatController=null,interactionVersion=0,chatTimeoutMs=30000,refreshing=false,utteranceActive=null,speechResolver=null,speechTimeout=null;
 let residentRefreshBusy=false,residentLastUtterance='',residentLastReply='',residentSettingsTimer=null;
 const request=createApiClient({getCsrf:()=>csrf});
+const toolsPanel=createToolsPanel({request:api,onError:error=>showFailure(error),onProposal:()=>refresh()});
 const administrativeBusy=()=>reconnecting||shuttingDown||administrating;
 const voiceSession=createVoiceSession({
  createRecognition:()=>{
@@ -32,22 +34,23 @@ function enableInput(enabled){
  $('#voice-start').disabled=!enabled||sending||voiceSession.active;
 }
 function resetExchange(){const empty=$('#last-utterance');empty.textContent='Aguardando sua mensagem';empty.classList.add('empty-value');const reply=$('#current-reply');reply.textContent='O canal está pronto';reply.classList.add('empty-value');}
-function lock(){stopInteraction();csrf='';$('#login').hidden=false;$('#administration').hidden=true;$('#approvals').hidden=true;$('#conversation').hidden=true;$('#logout').hidden=true;$('#requests').replaceChildren();$('#chat-history').replaceChildren();resetExchange();setVoiceState('off');enableInput(false);}
+function lock(){toolsPanel.hide();stopInteraction();csrf='';$('#login').hidden=false;$('#administration').hidden=true;$('#approvals').hidden=true;$('#conversation').hidden=true;$('#logout').hidden=true;$('#requests').replaceChildren();$('#chat-history').replaceChildren();resetExchange();setVoiceState('off');enableInput(false);}
 async function refresh(){
  const version=interactionVersion;
  const {items}=await request('/api/approvals');
  if(version!==interactionVersion||administrativeBusy())return;
  $('#requests').replaceChildren();
  for(const item of items){const box=document.createElement('article');const text=document.createElement('p');
- const labels={pending:'Aguardando aprovação',completed:'Demonstração confirmada — nenhuma ação externa executada',rejected:'Recusada',expired:'Expirada'};
+ const labels={pending:'Aguardando aprovação',completed:item.kind==='desktop.action'?'Ação processada — consulte o resultado':'Demonstração confirmada — nenhuma ação externa executada',executing:'Executando',failed:'Falhou',rejected:'Recusada',expired:'Expirada'};
  text.textContent=item.description+' '+labels[item.state];box.append(text);
- if(item.state==='pending')for(const [decision,label] of [['approve','Aprovar demonstração'],['reject','Recusar']]){
- const button=document.createElement('button');button.textContent=label;button.onclick=()=>run(async()=>{await api('/api/decision',{id:item.id,decision});await refresh();});box.append(button);}
+ if(item.state==='pending'&&item.kind==='desktop.action')$('#approvals').open=true;
+ if(item.state==='pending')for(const [decision,label] of [['approve',item.kind==='desktop.action'?'Aprovar ação':'Aprovar demonstração'],['reject','Recusar']]){
+ const button=document.createElement('button');button.textContent=label;button.onclick=()=>run(async()=>{const result=await api('/api/decision',{id:item.id,decision},{timeoutMs:chatTimeoutMs});await Promise.all([refresh(),loadChat()]);if(result.items||result.content!==undefined)toolsPanel.showResult(result);});box.append(button);}
  $('#requests').append(box);}
 }
 function addMessage(role,text){const item=document.createElement('article');item.className=`message ${role==='user'?'user-message':'jarvis-message'}`;const label=document.createElement('b');label.textContent=role==='user'?'Mateus':'Jarvis';const content=document.createElement('p');content.textContent=text;item.append(label,content);$('#chat-history').append(item);$('#chat-history').scrollTop=$('#chat-history').scrollHeight;const summary=role==='user'?$('#last-utterance'):$('#current-reply');summary.textContent=text;summary.classList.remove('empty-value');}
 async function loadChat(){const {messages}=await api('/api/chat');$('#chat-history').replaceChildren();resetExchange();for(const message of messages)addMessage(message.role,message.text);}
-async function enter(){const s=await request('/api/session');csrf=s.csrf;instanceId=s.instanceId;const status=await request('/api/status');chatTimeoutMs=(status.operationTimeoutMs||25000)+5000;$('#login').hidden=true;$('#administration').hidden=false;$('#approvals').hidden=false;$('#conversation').hidden=false;$('#logout').hidden=false;setVoiceState('off');enableInput(true);$('#restart-jarvis').disabled=!status.restartAvailable;$('#shutdown-jarvis').disabled=!status.shutdownAvailable;const providers=[status.geminiConfigured&&'Gemini',status.openrouterConfigured&&'OpenRouter',status.openaiEnabled&&status.openaiConfigured&&'OpenAI'].filter(Boolean);const providerLabel=providers.length?providers.join(' · '):'IA não configurada';$('#gemini-state').textContent=providerLabel;$('#status').textContent=`Acesso autenticado · ${providerLabel}`;await Promise.all([refresh(),loadChat(),refreshResidentVoice()]);}
+async function enter(){const s=await request('/api/session');csrf=s.csrf;instanceId=s.instanceId;const status=await request('/api/status');chatTimeoutMs=(status.operationTimeoutMs||25000)+5000;toolsPanel.show();$('#login').hidden=true;$('#administration').hidden=false;$('#approvals').hidden=false;$('#conversation').hidden=false;$('#logout').hidden=false;setVoiceState('off');enableInput(true);$('#restart-jarvis').disabled=!status.restartAvailable;$('#shutdown-jarvis').disabled=!status.shutdownAvailable;const providers=[status.geminiConfigured&&'Gemini',status.openrouterConfigured&&'OpenRouter',status.openaiEnabled&&status.openaiConfigured&&'OpenAI'].filter(Boolean);const providerLabel=providers.length?providers.join(' · '):'IA não configurada';$('#gemini-state').textContent=providerLabel;$('#status').textContent=`Acesso autenticado · ${providerLabel}`;await Promise.all([refresh(),loadChat(),refreshResidentVoice()]);}
 function showFailure(error){$('#status').textContent=error.message;setVoiceState(error.code==='SERVER_UNAVAILABLE'?'offline':'error');}
 async function run(fn){try{await fn();}catch(error){if(error.status===401&&!administrativeBusy())lock();showFailure(error);}}
 $('#login-form').onsubmit=e=>{e.preventDefault();run(async()=>{const code=$('#code').value.trim();try{await api('/api/login',{code});}finally{$('#code').value='';}await enter();});};
@@ -102,6 +105,7 @@ $('#shutdown-jarvis').onclick=async()=>{
 };
 $('#demo').onclick=()=>run(async()=>{await api('/api/demo',{});await refresh();});
 function setVoiceState(state){
+ $('#backend-state').textContent=state==='offline'?'OFFLINE':csrf?'CONECTADO':'AGUARDANDO';
  const labels={
   [VOICE_STATES.OFF]:'Microfone desligado',[VOICE_STATES.AWAITING]:'Microfone ativo · diga “Jarvis”',
   [VOICE_STATES.LISTENING]:'Ouvindo comando',[VOICE_STATES.PROCESSING]:'Processando',
@@ -192,6 +196,7 @@ function updateSpeechControl(id,outputId,format){
  output.value=format(Number(control.value));output.textContent=format(Number(control.value));
 }
 function cancelSpeech(){
+ clearTimeout(speechTimeout);speechTimeout=null;
  const utterance=utteranceActive;utteranceActive=null;
  if(utterance){utterance.onstart=null;utterance.onend=null;utterance.onerror=null;}
  if(window.speechSynthesis)window.speechSynthesis.cancel();
@@ -206,6 +211,7 @@ function speakReply(text,{fromVoice=false}={}){
  const portugueseVoice=selectPortugueseVoice(voices);
  utterance.voice=portugueseVoice||null;
  utterance.lang='pt-BR';
+ utterance.pitch=0.9;
  utterance.rate=Number($('#speech-rate').value);
  utterance.volume=Number($('#speech-volume').value);
  utteranceActive=utterance;
@@ -219,6 +225,7 @@ function speakReply(text,{fromVoice=false}={}){
   speechResolver=resolve;
   const finish=success=>{
    if(utteranceActive!==utterance)return;
+   clearTimeout(speechTimeout);speechTimeout=null;
    utteranceActive=null;speechResolver=null;
    if(!fromVoice&&voiceSession.state===VOICE_STATES.SPEAKING)setVoiceState(VOICE_STATES.OFF);
    resolve(success);
@@ -235,6 +242,7 @@ function speakReply(text,{fromVoice=false}={}){
    }
    finish(false);
   };
+  speechTimeout=setTimeout(()=>{cancelSpeech();showVoiceError('A resposta falada excedeu o prazo e foi interrompida.');},120000);
   try {window.speechSynthesis.speak(utterance);}
   catch(error){showVoiceError(`Não foi possível iniciar a síntese de voz (${error?.name||'erro do navegador'}).`);finish(false);}
  });
@@ -339,6 +347,7 @@ function scheduleResidentVoiceSettings(){
  }),350);
 }
 $('#nav-chat').onclick=()=>{$('#chat-drawer').open=true;};
+$('#speech-cancel').onclick=()=>{cancelSpeech();if(!sending)voiceSession.resume();};
 $('#voice-toggle').onclick=()=>{
  const button=$('#voice-toggle'),enabled=button.getAttribute('aria-pressed')!=='true';
  if(enabled&&(!window.speechSynthesis||typeof SpeechSynthesisUtterance==='undefined')){

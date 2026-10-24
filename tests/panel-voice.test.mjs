@@ -248,3 +248,22 @@ test('seleciona voz em português brasileiro e prefere uma opção masculina qua
  assert.equal(selectPortugueseVoice([{name:'English',lang:'en-US'},portuguese[0]]),portuguese[0]);
  assert.equal(selectPortugueseVoice([{name:'English',lang:'en-US'}]),undefined);
 });
+
+test('wake word parcial seguida de final isolada não é enviada como comando',()=>{
+ const {session,recognitions,commands}=createHarness();session.start();
+ recognitions[0].emit('Jarvis',{final:false});recognitions[0].emit('Jarvis');
+ assert.deepEqual(commands,[]);recognitions[0].emit('abre o Chrome');assert.deepEqual(commands,['abre o Chrome']);session.stop();
+});
+test('janela de comando expira após silêncio e não captura fala sem ativação',()=>{
+ const timers=[];const {session,recognitions,commands}=createHarness({schedule:callback=>{const timer={callback};timers.push(timer);return timer;},cancelSchedule:()=>{}});
+ session.start();recognitions[0].emit('Jarvis');timers[0].callback();
+ assert.equal(session.state,VOICE_STATES.AWAITING);recognitions[0].emit('abre o Chrome');assert.deepEqual(commands,[]);session.stop();
+});
+
+test('marcação female não é confundida com voz masculina',()=>{
+ const selected=selectPortugueseVoice([
+  {lang:'pt-BR',name:'Maria Natural',gender:'female',default:true},
+  {lang:'pt-BR',name:'Paulo',gender:'male'},
+ ]);
+ assert.equal(selected.name,'Paulo');
+});

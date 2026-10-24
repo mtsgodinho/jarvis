@@ -19,15 +19,15 @@
 				<a class="nav-item active" href="#cockpit" aria-label="Início" aria-current="page"><span class="nav-icon" aria-hidden="true">⌂</span><span>Início</span></a>
 				<a id="nav-chat" class="nav-item" href="#chat-drawer" aria-label="Chat"><span class="nav-icon" aria-hidden="true">▤</span><span>Chat</span></a>
 				<p class="nav-label nav-label-spaced">AMBIENTE</p>
-				<button class="nav-item" type="button" disabled aria-disabled="true" aria-label="Comandos"><span class="nav-icon" aria-hidden="true">⌘</span><span>Comandos</span></button>
-				<button class="nav-item" type="button" disabled aria-disabled="true" aria-label="Aplicativos"><span class="nav-icon" aria-hidden="true">▦</span><span>Aplicativos</span></button>
-				<button class="nav-item" type="button" disabled aria-disabled="true" aria-label="Automação"><span class="nav-icon" aria-hidden="true">⟳</span><span>Automação</span></button>
-				<button class="nav-item" type="button" disabled aria-disabled="true" aria-label="Projetos"><span class="nav-icon" aria-hidden="true">◇</span><span>Projetos</span></button>
-				<button class="nav-item" type="button" disabled aria-disabled="true" aria-label="Sistema"><span class="nav-icon" aria-hidden="true">⚙</span><span>Sistema</span></button>
-				<button class="nav-item" type="button" disabled aria-disabled="true" aria-label="Internet"><span class="nav-icon" aria-hidden="true">◎</span><span>Internet</span></button>
-				<button class="nav-item" type="button" disabled aria-disabled="true" aria-label="Multimídia"><span class="nav-icon" aria-hidden="true">♫</span><span>Multimídia</span></button>
-				<button class="nav-item" type="button" disabled aria-disabled="true" aria-label="Notas"><span class="nav-icon" aria-hidden="true">▧</span><span>Notas</span></button>
-				<button class="nav-item" type="button" disabled aria-disabled="true" aria-label="Configurações"><span class="nav-icon" aria-hidden="true">⚙</span><span>Configurações</span></button>
+				<button class="nav-item" type="button" hidden disabled aria-disabled="true" aria-label="Comandos"><span class="nav-icon" aria-hidden="true">⌘</span><span>Comandos</span></button>
+				<button class="nav-item" type="button" hidden disabled aria-disabled="true" aria-label="Aplicativos"><span class="nav-icon" aria-hidden="true">▦</span><span>Aplicativos</span></button>
+				<button class="nav-item" type="button" hidden disabled aria-disabled="true" aria-label="Automação"><span class="nav-icon" aria-hidden="true">⟳</span><span>Automação</span></button>
+				<button class="nav-item" type="button" hidden disabled aria-disabled="true" aria-label="Projetos"><span class="nav-icon" aria-hidden="true">◇</span><span>Projetos</span></button>
+				<button class="nav-item" type="button" hidden disabled aria-disabled="true" aria-label="Sistema"><span class="nav-icon" aria-hidden="true">⚙</span><span>Sistema</span></button>
+				<button class="nav-item" type="button" hidden disabled aria-disabled="true" aria-label="Internet"><span class="nav-icon" aria-hidden="true">◎</span><span>Internet</span></button>
+				<button class="nav-item" type="button" hidden disabled aria-disabled="true" aria-label="Multimídia"><span class="nav-icon" aria-hidden="true">♫</span><span>Multimídia</span></button>
+				<button class="nav-item" type="button" hidden disabled aria-disabled="true" aria-label="Notas"><span class="nav-icon" aria-hidden="true">▧</span><span>Notas</span></button>
+				<button class="nav-item" type="button" hidden disabled aria-disabled="true" aria-label="Configurações"><span class="nav-icon" aria-hidden="true">⚙</span><span>Configurações</span></button>
 			</nav>
 			<div class="sidebar-account"><span class="account-avatar" aria-hidden="true">M</span><span><strong>MATEUS</strong><small>SESSÃO LOCAL</small></span><span class="account-led" aria-hidden="true"></span></div>
 		</aside>
@@ -47,7 +47,7 @@
 
 			<main id="cockpit">
 				<section id="login" class="login-view" aria-labelledby="login-title">
-					<div class="login-copy"><p class="eyebrow">CANAL PRIVADO · LOOPBACK</p><h1 id="login-title">JARVIS<span> online.</span></h1><p>Conecte-se para iniciar uma sessão pessoal neste dispositivo.</p></div>
+					<div class="login-copy"><p class="eyebrow">CANAL PRIVADO · LOOPBACK</p><h1 id="login-title">JARVIS<span> pronto para conectar.</span></h1><p>Conecte-se para iniciar uma sessão pessoal neste dispositivo.</p></div>
 					<form id="login-form" class="login-form"><label for="code">Código de acesso</label><input id="code" type="password" autocomplete="off" required maxlength="48"><button class="primary-button" type="submit">Estabelecer conexão <span aria-hidden="true">↗</span></button><small>O código está disponível na janela do launcher.</small></form>
 				</section>
 
@@ -55,9 +55,9 @@
 					<section id="assistant-stage" class="assistant-stage" aria-label="Cockpit Jarvis">
 						<aside class="telemetry-panel" aria-label="Estado dos serviços configurados">
 							<div class="panel-heading"><span class="panel-icon" aria-hidden="true">⌬</span><div><small>CANAL</small><strong>Conexões</strong></div></div>
-							<div class="telemetry-reading"><span class="reading-index">01</span><div><small>PROVEDORES DISPONÍVEIS</small><strong id="gemini-state">Não conectado</strong></div><span class="reading-led" aria-hidden="true"></span></div>
+							<div class="telemetry-reading"><span class="reading-index">01</span><div><small>PROVEDORES CONFIGURADOS</small><strong id="gemini-state">Não conectado</strong></div><span class="reading-led" aria-hidden="true"></span></div>
 							<div class="telemetry-reading"><span class="reading-index">02</span><div><small>ESTADO DO JARVIS</small><strong id="voice-state" class="voice-state" role="status" aria-live="polite" data-state="off">Microfone desligado</strong></div><span class="state-marker" aria-hidden="true"></span></div>
-							<div class="local-capability"><span class="local-icon" aria-hidden="true">⌖</span><span><small>AMBIENTE</small><strong>Execução local</strong></span><b>ATIVO</b></div>
+							<div class="local-capability"><span class="local-icon" aria-hidden="true">⌖</span><span><small>AMBIENTE</small><strong>Execução local</strong></span><b id="backend-state">AGUARDANDO</b></div>
 						</aside>
 
 						<div class="core-console">
@@ -80,7 +80,7 @@
 							<div class="core-wordmark"><strong>JARVIS</strong><span>TECH VIEW</span></div>
 							<div class="core-caption"><span class="live-dot" aria-hidden="true"></span><span id="core-state-label">Sistema em espera</span></div>
 							<div id="voice-waveform" class="voice-waveform" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-							<div class="core-controls"><div class="voice-mode-controls"><button id="voice-enable" class="mic-button" type="button" aria-label="Ativar Jarvis por voz"><svg class="mic-symbol" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3m-4 0h8"/></svg><span>Ativar Jarvis</span></button><button id="voice-disable" class="quiet-button" type="button" disabled>Desativar Jarvis</button></div><button id="voice-start" class="quiet-button manual-mic" type="button" aria-label="Ouvir uma frase" title="Ouvir uma frase">Falar uma frase</button><button id="voice-stop" class="quiet-button stop-listening" type="button" hidden>Interromper escuta</button><span id="microphone-indicator" class="microphone-indicator" data-active="false" role="status">Microfone desligado</span><p class="voice-privacy-note">O reconhecimento pode usar o serviço do navegador. Apenas texto após “Jarvis” é enviado ao chat.</p><div class="resident-voice-controls"><span id="resident-voice-status" role="status" aria-live="polite">Residente desligado</span><div><button id="resident-voice-enable" class="quiet-button" type="button">Configurar escuta residente</button><button id="resident-voice-disable" class="quiet-button" type="button" disabled>Desativar residente</button></div><small>Reconhecimento e voz locais do Windows; o microfone só liga após consentimento.</small></div><p id="resident-voice-error" class="chat-error" role="alert" hidden></p><p id="voice-error" class="chat-error" role="alert" hidden></p></div>
+							<div class="core-controls"><div class="voice-mode-controls"><button id="voice-enable" class="mic-button" type="button" aria-label="Ativar Jarvis por voz"><svg class="mic-symbol" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3m-4 0h8"/></svg><span>Ativar Jarvis</span></button><button id="voice-disable" class="quiet-button" type="button" disabled>Desativar Jarvis</button></div><button id="voice-start" class="quiet-button manual-mic" type="button" aria-label="Ouvir uma frase" title="Ouvir uma frase">Falar uma frase</button><button id="speech-cancel" class="quiet-button" type="button">Interromper resposta falada</button><button id="voice-stop" class="quiet-button stop-listening" type="button" hidden>Interromper escuta</button><span id="microphone-indicator" class="microphone-indicator" data-active="false" role="status">Microfone desligado</span><p class="voice-privacy-note">O reconhecimento pode usar o serviço do navegador. Apenas texto após “Jarvis” é enviado ao chat.</p><div class="resident-voice-controls"><span id="resident-voice-status" role="status" aria-live="polite">Residente desligado</span><div><button id="resident-voice-enable" class="quiet-button" type="button">Configurar escuta residente</button><button id="resident-voice-disable" class="quiet-button" type="button" disabled>Desativar residente</button></div><small>Reconhecimento e voz locais do Windows; o microfone só liga após consentimento.</small></div><p id="resident-voice-error" class="chat-error" role="alert" hidden></p><p id="voice-error" class="chat-error" role="alert" hidden></p></div>
 						</div>
 
 						<aside class="exchange-panel" aria-label="Última troca da conversa">
@@ -103,7 +103,27 @@
 					<details id="chat-drawer" class="chat-drawer"><summary><span class="drawer-title"><span class="drawer-icon" aria-hidden="true">▤</span><span><small>CONTEXTO DA SESSÃO</small><strong>Histórico da conversa</strong></span></span><span class="drawer-hint">Abrir histórico <b aria-hidden="true">⌄</b></span></summary><div class="drawer-content"><div class="chat-heading"><p class="eyebrow">MENSAGENS DESTA SESSÃO</p><button id="clear-chat" class="quiet-button" type="button">Limpar conversa</button></div><div id="chat-history" class="chat-history" role="log" aria-live="polite" aria-relevant="additions"></div></div></details>
 				</section>
 
-				<details id="approvals" class="approvals-panel" aria-label="Aprovação de ações" hidden><summary><span class="panel-icon" aria-hidden="true">⌑</span><span>Aprovações de demonstração</span><small>Nenhuma ação será executada</small><b aria-hidden="true">⌄</b></summary><div class="approval-content"><p>Teste de autorização: nada será feito no Windows. Cada pedido expira em 60 segundos e só pode ser resolvido uma vez.</p><button id="demo" class="quiet-button" type="button">Criar pedido de demonstração</button><div id="requests"></div></div></details>
+				<details id="approvals" class="approvals-panel" aria-label="Aprovação de ações" hidden><summary><span class="panel-icon" aria-hidden="true">⌑</span><span>Aprovações de ações</span><small>Confirme antes de executar</small><b aria-hidden="true">⌄</b></summary><div class="approval-content"><p>Revise a ação antes de aprovar. Pedidos expiram em 60 segundos e só podem ser resolvidos uma vez. A demonstração não executa ações.</p><button id="demo" class="quiet-button" type="button">Criar pedido de demonstração</button><div id="requests"></div></div></details>
+                <section id="tools-panel" class="approvals-panel" hidden aria-label="Memória e diagnósticos">
+                  <details id="tool-details"><summary>Ferramentas autorizadas</summary><p>Crie uma proposta e aprove na seção de ações. Arquivos exigem uma pasta configurada; automação de janelas e energia exige Windows.</p>
+                    <form id="tool-form">
+                      <label>Operação<select id="tool-action"><option value="list_apps">Listar aplicativos abertos</option><option value="focus_window">Alternar janela</option><option value="minimize_window">Minimizar janela</option><option value="maximize_window">Maximizar janela</option><option value="close_app">Solicitar fechamento de aplicativo</option><option value="click_control">Acionar botão pelo nome</option><option value="type_text">Preencher campo pelo nome</option><option value="keyboard_shortcut">Enviar atalho</option><option value="files_list">Listar pasta autorizada</option><option value="files_open">Abrir documento autorizado</option><option value="files_read">Ler arquivo de texto</option><option value="files_create">Criar arquivo de texto</option><option value="files_move">Organizar arquivo</option><option value="restart_windows">Reiniciar Windows — salve seu trabalho</option><option value="shutdown_windows">Desligar Windows — salve seu trabalho</option></select></label>
+                      <label id="tool-app-label">Aplicativo<select id="tool-app"><option value="chrome">Chrome</option><option value="edge">Edge</option><option value="notepad">Bloco de Notas</option><option value="calculator">Calculadora</option><option value="paint">Paint</option><option value="spotify">Spotify</option><option value="vscode">VS Code</option></select></label>
+                      <label id="tool-control-label" hidden>Nome exato do controle<input id="tool-control" maxlength="120"></label>
+                      <label id="tool-path-label" hidden>Caminho relativo à pasta autorizada<input id="tool-path" maxlength="240" placeholder="notas.txt"></label>
+                      <label id="tool-destination-label" hidden>Destino relativo<input id="tool-destination" maxlength="240" placeholder="organizado/notas.txt"></label>
+                      <label id="tool-text-label" hidden>Texto solicitado<textarea id="tool-text" maxlength="2000"></textarea></label>
+                      <label id="tool-shortcut-label" hidden>Atalho<select id="tool-shortcut"><option value="copy">Copiar</option><option value="paste">Colar</option><option value="select_all">Selecionar tudo</option><option value="save">Salvar</option><option value="find">Localizar</option></select></label>
+                      <button type="submit">Revisar proposta antes de executar</button>
+                    </form><pre id="tool-result" aria-live="polite"></pre>
+                  </details>
+                  <details><summary>Memória permanente</summary><p>Informações autorizadas e compartilhadas entre suas sessões locais. Não guarde senhas ou chaves.</p>
+                    <button id="memory-refresh" type="button">Atualizar memória</button>
+                    <form id="memory-form"><label>Campo (ex.: user:projeto)<input id="memory-key" required maxlength="85" placeholder="user:projeto"></label><label>Informação<input id="memory-value" required maxlength="240"></label><button type="submit">Salvar informação</button></form>
+                    <div id="memory-items" aria-live="polite"></div>
+                  </details>
+                  <details><summary>Diagnósticos e provedores</summary><button id="diagnostics-refresh" type="button">Consultar estado real</button><pre id="diagnostics-output" aria-live="polite">Consulte o estado para carregar.</pre></details>
+                </section>
 			</main>
 			<footer class="footer-line"><span>JARVIS / MATEUS</span><span>LOCAL FIRST · PRIVATE SESSION</span></footer>
 		</div>

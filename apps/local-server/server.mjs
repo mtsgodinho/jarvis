@@ -1,8 +1,10 @@
+import { createResearch, detectResearch } from '../../packages/research/index.mjs';
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import dotenv from 'dotenv';
+import { canonicalAction, createActionApprovals } from '../../packages/security/action-approval.mjs';
 import { createApprovalStore } from '../../packages/security/approval-store.mjs';
 import { generateGeminiResponse } from '../../packages/providers/gemini.mjs';
 import { createAIResponseRouter, AIProviderFailure } from '../../packages/providers/ai-router.mjs';
@@ -30,6 +32,7 @@ import {
 import {
  DEFAULT_RESIDENT_VOICE_DIAGNOSTICS_PATH,
  appendResidentVoiceDiagnostic,
+ readResidentVoiceDiagnostics,
 } from '../../packages/resident-voice/diagnostics.mjs';
 dotenv.config({path:fileURLToPath(new URL('../../.env',import.meta.url)),quiet:true});
 const fallbackModels=['gemini-3.7-flash','gemini-3.6-flash'];
@@ -63,12 +66,13 @@ export function createServer({port=DEFAULT_PORT, accessCode=randomBytes(24).toSt
  openrouterModel=process.env.OPENROUTER_MODEL||DEFAULT_OPENROUTER_MODEL,
  memoryFilePath=DEFAULT_MEMORY_FILE, memoryStore,
  googleApiKey=process.env.GOOGLE_API_KEY, googleModel=process.env.GOOGLE_MODEL,
- supervised=false, requestRestart, requestShutdown, restartSecret, generation,
+ musicProvider=process.env.JARVIS_MUSIC_PROVIDER||'youtube', researchService=createResearch(), requireActionApproval=true, supervised=false, requestRestart, requestShutdown, restartSecret, generation,
  operationTimeoutMs=25000, logger=console, residentVoiceSettingsPath=DEFAULT_RESIDENT_VOICE_SETTINGS_PATH,
  residentVoiceDiagnosticsPath=DEFAULT_RESIDENT_VOICE_DIAGNOSTICS_PATH,
  residentVoiceAutoStart=false, residentVoiceService, residentVoicePlatform=process.platform}={}) {
  port=resolvePort(port);
  const origin=serverOrigin(port), sessions=new Map(), approvals=createApprovalStore();
+ const actionApprovals=createActionApprovals();
  const operations=createOperations({timeoutMs:operationTimeoutMs,logger});
  const processes=createProcessManager({logger});
  const tickets=createRestartTickets({secret:restartSecret,generation});
@@ -218,7 +222,7 @@ export function createServer({port=DEFAULT_PORT, accessCode=randomBytes(24).toSt
   }
   return residentVoice.status;
  };
- const files=new Map([['/',['index.html','text/html']],['/app.js',['app.js','text/javascript']],['/api.js',['api.js','text/javascript']],['/voice-session.js',['voice-session.js','text/javascript']],['/voice-speech.js',['voice-speech.js','text/javascript']],['/style.css',['style.css','text/css']]]);
+ const files=new Map([['/',['index.html','text/html']],['/app.js',['app.js','text/javascript']],['/api.js',['api.js','text/javascript']],['/voice-session.js',['voice-session.js','text/javascript']],['/voice-speech.js',['voice-speech.js','text/javascript']],['/tools-panel.js',['tools-panel.js','text/javascript']],['/style.css',['style.css','text/css']]]);
  const cookieValue=(req,name)=>(req.headers.cookie||'').split(';').map(v=>v.trim()).find(v=>v.startsWith(`${name}=`))?.slice(name.length+1);
  const createSession=res=>{
   const id=randomBytes(32).toString('hex');
@@ -260,14 +264,14 @@ export function createServer({port=DEFAULT_PORT, accessCode=randomBytes(24).toSt
     if(!body || typeof body!=='object' || Array.isArray(body))return reply(400,{error:'Dados inválidos'});
    }
    const now=Date.now();
-    for(const [key,s] of sessions) if(s.expiresAt<=now){operations.clear(key);sessions.delete(key);approvals.clear(key);conversations.delete(key);}
+    for(const [key,s] of sessions) if(s.expiresAt<=now){operations.clear(key);sessions.delete(key);approvals.clear(key);actionApprovals.clear(key);conversations.delete(key);}
    if(req.url==='/api/login' && req.method==='POST') {
     attempts=attempts.filter(t=>now-t<60000);
     if(attempts.length>=5)return reply(429,{error:'Aguarda um minuto e tenta novamente.'});
     if(!equal(body.code,accessCode)){attempts.push(now);return reply(401,{error:'Código incorreto'});}
     if([...sessions.values()].filter(value=>!value.residentVoice).length>=10)return reply(429,{error:'Limite de sessões. Reinicia o servidor.'});
     const previous=cookieValue(req,'jarvis_session');
-    if(previous){operations.clear(previous);sessions.delete(previous);approvals.clear(previous);conversations.delete(previous);}
+    if(previous){operations.clear(previous);sessions.delete(previous);approvals.clear(previous);actionApprovals.clear(previous);conversations.delete(previous);}
     createSession(res);
     return reply(200,{ok:true});
    }
@@ -292,8 +296,35 @@ export function createServer({port=DEFAULT_PORT, accessCode=randomBytes(24).toSt
     openrouterConfigured:aiRouter.status.openrouterConfigured,
      geminiConfigured:aiRouter.status.geminiConfigured,
      restartAvailable:supervised&&typeof requestRestart==='function',shutdownAvailable:typeof requestShutdown==='function',
-     operationTimeoutMs,
+     operationTimeoutMs,requireActionApproval,platform:process.platform,filesConfigured:Boolean(process.env.JARVIS_FILES_ROOT),spotifyConfigured:Boolean(process.env.SPOTIFY_ACCESS_TOKEN),
     });
+    if(req.url==='/api/proposals' && req.method==='POST'){
+     if(Object.keys(body).length!==2 || !Object.hasOwn(body,'action') || !Object.hasOwn(body,'params'))return reply(400,{error:'Proposta inválida.'});
+     const canonical=canonicalAction(body.action,body.params);
+     if(!canonical)return reply(400,{error:'Ação ou argumentos não permitidos.'});
+     try{return reply(200,actionApprovals.create(id,canonical.action,canonical.params,'Pedido pelo painel'));}
+     catch{return reply(429,{error:'Limite de propostas. Aguarde a expiração das anteriores.'});}
+    }
+    if(req.url==='/api/memory' && req.method==='GET'){
+     try{return reply(200,{items:await localMemory.getFacts()});}
+     catch{return reply(503,{code:'MEMORY_UNAVAILABLE',error:'Não foi possível ler a memória local.'});}
+    }
+    if(['/api/memory','/api/memory/delete'].includes(req.url) && req.method==='POST'){
+     const deleting=req.url.endsWith('/delete');
+     const allowed=deleting?['key']:['key','value'];
+     if(Object.keys(body).length!==allowed.length || allowed.some(key=>!Object.hasOwn(body,key)) || typeof body.key!=='string')return reply(400,{error:'Dados de memória inválidos.'});
+     try{
+      const result=deleting?await localMemory.deleteFact(body.key):await localMemory.setFact(body.key,body.value);
+      return reply(200,{ok:true,...result});
+     }catch(error){
+      const invalid=['MEMORY_KEY_REJECTED','MEMORY_VALUE_REJECTED','MEMORY_LIMIT_REACHED'].includes(error.message);
+      return reply(invalid?400:503,{code:invalid?error.message:'MEMORY_UNAVAILABLE',error:invalid?'Campo ou valor não permitido; não armazene credenciais.':'Não foi possível gravar a memória local.'});
+     }
+    }
+    if(req.url==='/api/diagnostics' && req.method==='GET'){
+     try{return reply(200,{platform:process.platform,nodeVersion:process.versions.node,state:lifecycle,voice:await readResidentVoiceDiagnostics(residentVoiceDiagnosticsPath),providers:aiRouter.status});}
+     catch{return reply(503,{code:'VOICE_DIAGNOSTICS_UNAVAILABLE',error:'Não foi possível ler os diagnósticos de voz. O arquivo foi preservado.'});}
+    }
     if(req.url==='/api/voice/resident' && req.method==='GET'){
      await ensureResidentSettings();
      if(residentSettings.enabled&&residentVoice.status?.enabled){
@@ -342,6 +373,7 @@ export function createServer({port=DEFAULT_PORT, accessCode=randomBytes(24).toSt
        return reply(503,{code,error:diagnosticDetails?`${errorMessage} (${diagnosticDetails})`:errorMessage});
       }
      }else{
+      residentVoiceRequestController?.abort();
       try{await residentVoice.stop();}
       catch{residentSettingsError='VOICE_STOP_FAILED';return reply(503,{code:residentSettingsError,error:'Não foi possível confirmar o encerramento da escuta residente.'});}
       if(residentSession?.id===id)residentSession=null;
@@ -353,7 +385,7 @@ export function createServer({port=DEFAULT_PORT, accessCode=randomBytes(24).toSt
      if(Object.keys(body).length)return reply(400,{error:'A solicitação administrativa não aceita parâmetros.'});
      if(!supervised || typeof requestRestart!=='function')return reply(503,{error:'Reinício disponível somente pelo launcher do Windows.'});
       if(requestRestart()===false)return reply(503,{error:'O supervisor não aceitou o reinício.'});
-      lifecycle='restarting';operations.stop();
+      lifecycle='restarting';actionApprovals.clearAll();operations.stop();
       const ticket=tickets.issue();if(ticket)res.setHeader('Set-Cookie',ticket);
       diagnostic('server.restart_requested',{},logger);
      return reply(202,{ok:true,state:'restarting'});
@@ -362,7 +394,7 @@ export function createServer({port=DEFAULT_PORT, accessCode=randomBytes(24).toSt
      if(Object.keys(body).length)return reply(400,{error:'A solicitação administrativa não aceita parâmetros.'});
      if(typeof requestShutdown!=='function')return reply(503,{error:'Desligamento indisponível neste modo de inicialização.'});
       if(requestShutdown()===false)return reply(503,{error:'O servidor não aceitou o desligamento.'});
-      lifecycle='shutting_down';operations.stop();
+      lifecycle='shutting_down';actionApprovals.clearAll();operations.stop();
       diagnostic('server.shutdown_requested',{},logger);
      return reply(202,{ok:true,state:'shutting_down'});
     }
@@ -372,7 +404,7 @@ export function createServer({port=DEFAULT_PORT, accessCode=randomBytes(24).toSt
      if(Object.keys(body).some(key=>key!=='id') || (body.id!==undefined && !/^[a-f0-9-]{36}$/.test(body.id)))return reply(400,{error:'Identificador de operação inválido.'});
      return reply(200,{ok:true,cancelled:operations.cancel(id,body.id)});
     }
-    if(req.url==='/api/chat/clear' && req.method==='POST'){operations.clear(id);conversations.delete(id);return reply(200,{ok:true});}
+    if(req.url==='/api/chat/clear' && req.method==='POST'){operations.clear(id);actionApprovals.clear(id);conversations.delete(id);return reply(200,{ok:true});}
     if(req.url==='/api/chat' && req.method==='POST'){
      if(typeof body.message!=='string' || !body.message.trim() || body.message.trim().length>2500)return reply(400,{error:'Escreve uma mensagem com até 2.500 caracteres.'});
      const requestId=req.headers['x-jarvis-request-id'];
@@ -396,6 +428,11 @@ export function createServer({port=DEFAULT_PORT, accessCode=randomBytes(24).toSt
      };
      const executeAction=async(action,params)=>{
       check();
+      if(requireActionApproval){
+       const proposal=actionApprovals.create(id,action,params,body.message.trim());
+       execution={status:'pending_approval',verified:false,approvalId:proposal.id};
+       return {ok:true,status:'pending_approval',verified:false};
+      }
       if(actionBusy)throw operationError('ACTION_BUSY');
       actionBusy=true;operation.setAction(action);
       diagnostic('action.started',{operationId:operation.id,action},logger);
@@ -479,7 +516,7 @@ export function createServer({port=DEFAULT_PORT, accessCode=randomBytes(24).toSt
       }
       const rememberedAction=resolveMemoryPlayback(message,persistentFacts);
       if(rememberedAction){
-       const validated=validateLocalAction(rememberedAction.action,rememberedAction.params);
+       const validated=validateLocalAction(musicProvider==='spotify'?'play_spotify':rememberedAction.action,rememberedAction.params);
        if(validated){
         let actionResult;
         try {actionResult=await executeAction(validated.action,validated.params);}
@@ -490,6 +527,13 @@ export function createServer({port=DEFAULT_PORT, accessCode=randomBytes(24).toSt
         return reply(200,{reply:answer,source:'local_action'});
        }
       }
+     const research=detectResearch(message);
+     if(research){
+      try{
+       const result=await researchService.run(research,{signal:operation.signal});
+       saveConversation(result.reply);return reply(200,{...result,source:'web_research'});
+      }catch(error){controlError(error);return reply(503,{code:'RESEARCH_UNAVAILABLE',error:'Não consegui consultar as fontes agora. Nenhuma informação atual foi inventada. Verifique a conexão e tente novamente.'});}
+     }
      let generated;
     try {generated=await aiRouter.generateResponse({
      message,history:history.map(item=>({...item})),memoryContext:buildMemoryContext(persistentFacts,message,history),signal:operation.signal,
@@ -545,14 +589,69 @@ export function createServer({port=DEFAULT_PORT, accessCode=randomBytes(24).toSt
      });}finally{res.removeListener('close',disconnected);}
      return reply(outcome.status,{...outcome.body,operationId:outcome.operationId});
     }
-   if(req.url==='/api/approvals' && req.method==='GET')return reply(200,{items:approvals.list(id)});
+   if(req.url==='/api/approvals' && req.method==='GET')return reply(200,{items:[...actionApprovals.list(id),...approvals.list(id)]});
    if(req.url==='/api/demo' && req.method==='POST')return reply(200,approvals.create(id));
    if(req.url==='/api/decision' && req.method==='POST'){
+    if(Object.keys(body).length!==2 || typeof body.id!=='string' || !/^[a-f0-9]{48}$/.test(body.id) || !['approve','reject'].includes(body.decision))return reply(400,{error:'Decisão inválida.'});
+    if(actionApprovals.has(body.id)){
+     let proposal;
+     try{proposal=actionApprovals.decide(body.id,id,body.decision);}
+     catch{return reply(400,{error:'Solicitação inválida, expirada ou já resolvida.'});}
+     if(body.decision==='reject')return reply(200,proposal);
+     const disconnected=()=>{if(!res.writableEnded)operations.cancel(id);};
+     res.once('close',disconnected);
+     try{
+      const outcome=await operations.run(id,`approval_${proposal.id}`,proposal.id,async operation=>{
+       operation.check();
+       if(actionBusy)throw operationError('ACTION_BUSY');
+       const canonical=canonicalAction(proposal.action,proposal.params);
+       if(!canonical)throw operationError('ACTION_NOT_ALLOWED');
+       actionBusy=true;operation.setAction(canonical.action);
+       diagnostic('action.approved',{operationId:operation.id,action:canonical.action},logger);
+       try{
+        const result=executeAction
+         ?await abortable(Promise.resolve().then(()=>executeAction(canonical.action,canonical.params)),operation.signal)
+         :await runDesktopAction(canonical.action,canonical.params,{signal:operation.signal,processManager:processes});
+        operation.check();
+        if(lifecycle!=='running'||!sessions.has(id)||session.expiresAt<=Date.now())throw operationError('SESSION_INVALID');
+        if(result?.ok!==true)throw operationError('ACTION_FAILED');
+        const item=actionApprovals.finish(proposal.id,id,result);
+        const answer=truthfulActionReply(result,result.message||proposal.description);
+        conversations.appendExchange(id,`Aprovar: ${proposal.description}`,answer,canonical);
+        return {status:200,body:{...item,reply:answer,...(Array.isArray(result.items)?{items:result.items}:{}),...(typeof result.content==='string'?{content:result.content}:{})}};
+       }finally{actionBusy=false;}
+      });
+      return reply(outcome.status,{...outcome.body,operationId:outcome.operationId});
+     }catch(error){
+      try{actionApprovals.finish(proposal.id,id,{ok:false,status:'failed'});}catch{}
+      if(['CANCELLED','TIMEOUT','ACTION_BUSY','SERVER_STOPPING','SESSION_INVALID'].includes(error.code))throw error;
+      const known={
+       WINDOWS_ONLY:'Esta ação exige o executor no Windows.',
+       FILES_ROOT_REQUIRED:'Configure JARVIS_FILES_ROOT com a pasta que você autoriza o Jarvis a acessar.',
+       SPOTIFY_NOT_CONFIGURED:'Conecte o Spotify com um token OAuth e as permissões de reprodução.',
+       SPOTIFY_AUTH_REQUIRED:'A autorização do Spotify expirou ou foi recusada. Renove a conexão.',
+       SPOTIFY_PREMIUM_OR_SCOPE_REQUIRED:'O Spotify exige permissões de reprodução e uma conta compatível, normalmente Premium.',
+       SPOTIFY_DEVICE_REQUIRED:'Abra o Spotify em um dispositivo conectado e inicie uma reprodução para ativá-lo.',
+      };
+      const failure=error.code||error.message;
+      const code=Object.hasOwn(known,failure)?failure:'ACTION_FAILED';
+      return reply(503,{code,error:known[code]||'Não foi possível concluir a ação aprovada. Consulte o diagnóstico local.'});
+     }finally{res.removeListener('close',disconnected);}
+    }
+
     try{return reply(200,approvals.decide(body.id,id,body.decision));}
     catch{return reply(400,{error:'Solicitação inválida, expirada ou já resolvida.'});}
    }
    if(req.url==='/api/logout' && req.method==='POST'){
-    operations.clear(id);sessions.delete(id);approvals.clear(id);conversations.delete(id);res.setHeader('Set-Cookie',['jarvis_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0',clearRestartCookie]);diagnostic('session.ended',{},logger);return reply(200,{ok:true});
+    const stopResident=residentSession?.id===id;
+    operations.clear(id);sessions.delete(id);approvals.clear(id);actionApprovals.clear(id);conversations.delete(id);
+    res.setHeader('Set-Cookie',['jarvis_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0',clearRestartCookie]);
+    if(stopResident){
+     residentVoiceRequestController?.abort();residentSession=null;residentSettings={...residentSettings,enabled:false};
+     try{await residentVoice.stop();}catch{await diagnosticVoiceError('VOICE_STOP_FAILED',{stage:'service_stop'});}
+     try{await writeResidentVoiceSettings(residentSettings,residentVoiceSettingsPath);}catch{await diagnosticVoiceError('VOICE_SETTINGS_WRITE_FAILED',{stage:'service_stop'});}
+    }
+    diagnostic('session.ended',{},logger);return reply(200,{ok:true});
    }
    return reply(404,{error:'Não encontrado'});
   }catch(error){
@@ -578,6 +677,7 @@ export function createServer({port=DEFAULT_PORT, accessCode=randomBytes(24).toSt
  const close=()=>{
   if(closePromise)return closePromise;
   if(lifecycle==='running')lifecycle='shutting_down';
+  actionApprovals.clearAll();
   operations.stop();
   closePromise=(async()=>{
    diagnostic('server.stopping',{state:lifecycle},logger);

@@ -13,7 +13,7 @@ export async function preflight({ version = process.versions.node, resolve = cre
     catch { throw Object.assign(new Error(`Dependência ausente: ${dependency}. Restaure as dependências com npm ci na pasta do projeto.`), { code: 'DEPENDENCY_MISSING' }); }
   }
   for (const file of ['apps/panel/index.html', 'apps/panel/app.js', 'apps/panel/api.js',
-    'apps/panel/voice-session.js', 'apps/panel/voice-speech.js', 'apps/panel/style.css']) {
+    'apps/panel/voice-session.js', 'apps/panel/voice-speech.js', 'apps/panel/tools-panel.js', 'apps/panel/style.css']) {
     try { await access(new URL(file, PROJECT_ROOT)); }
     catch { throw Object.assign(new Error(`Arquivo necessário ausente: ${file}.`), { code: 'ASSET_MISSING' }); }
   }

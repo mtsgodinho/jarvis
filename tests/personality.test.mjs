@@ -18,7 +18,7 @@ async function withServer(memoryFilePath, options, run) {
   await new Promise(resolve => reservation.listen(0, '127.0.0.1', resolve));
   const port = reservation.address().port;
   await new Promise(resolve => reservation.close(resolve));
-  const app = createServer({ port, accessCode: 'personality-test', memoryFilePath, logger: quiet,
+  const app = createServer({requireActionApproval:false, port, accessCode: 'personality-test', memoryFilePath, logger: quiet,
     googleApiKey: 'test', googleModel: 'test', openrouterApiKey: '', openaiApiKey: '', openaiEnabled: false,
     generateReply: async () => reply('Recebido.'), ...options });
   await new Promise(resolve => app.server.listen(port, '127.0.0.1', resolve));

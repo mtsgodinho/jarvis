@@ -22,6 +22,7 @@ export function createVoiceSession({
   cancelSchedule = clearTimeout,
   maxRetries = 3,
   retryDelayMs = 500,
+  commandWindowMs = 12000,
 } = {}) {
   let enabled = false;
   let singleCommand = false;
@@ -29,6 +30,7 @@ export function createVoiceSession({
   let commandArmed = false;
   let recognition = null;
   let retryTimer = null;
+  let commandTimer = null;
   let retryCount = 0;
   let state = VOICE_STATES.OFF;
 
@@ -49,6 +51,11 @@ export function createVoiceSession({
     try { current.abort(); } catch {}
   }
 
+  function clearCommandWindow() {
+    if (commandTimer !== null) cancelSchedule(commandTimer);
+    commandTimer = null;
+  }
+
   function clearRetry() {
     if (retryTimer !== null) cancelSchedule(retryTimer);
     retryTimer = null;
@@ -59,6 +66,7 @@ export function createVoiceSession({
     singleCommand = false;
     commandBusy = false;
     commandArmed = false;
+    clearCommandWindow();
     clearRetry();
     detachRecognition();
     transition(VOICE_STATES.ERROR);
@@ -85,6 +93,7 @@ export function createVoiceSession({
   function finishCommand(transcript) {
     if (commandBusy || !transcript) return;
     commandBusy = true;
+    clearCommandWindow();
     retryCount = 0;
     const wasSingleCommand = singleCommand;
     singleCommand = false;
@@ -117,12 +126,19 @@ export function createVoiceSession({
         const activation = extractWakeCommand(transcript);
         if (!activation) continue;
         commandArmed = true;
+        clearCommandWindow();
+        commandTimer = schedule(() => {
+          commandTimer = null;
+          if (!commandBusy && enabled) { commandArmed = false; transition(VOICE_STATES.AWAITING); }
+        }, commandWindowMs);
+        commandTimer?.unref?.();
         transition(VOICE_STATES.LISTENING);
         if (result.isFinal && activation.command) finishCommand(activation.command);
         continue;
       }
       if (result.isFinal) {
         const activation = extractWakeCommand(transcript);
+        if (activation && !activation.command) continue;
         finishCommand(activation?.command || transcript);
         return;
       }
@@ -253,6 +269,7 @@ export function createVoiceSession({
     if (!commandBusy) return false;
     commandBusy = false;
     commandArmed = false;
+    clearCommandWindow();
     if (!enabled) {
       transition(VOICE_STATES.OFF);
       return false;
@@ -265,6 +282,7 @@ export function createVoiceSession({
     singleCommand = false;
     commandBusy = false;
     commandArmed = false;
+    clearCommandWindow();
     retryCount = 0;
     clearRetry();
     detachRecognition();

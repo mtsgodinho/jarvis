@@ -106,6 +106,7 @@ internal sealed class ResidentVoiceContext : ApplicationContext
     private bool speaking;
     private bool stopping;
     private bool constraintsCompiled;
+    private CancellationTokenSource? speechCancellation;
     private float speakingRate = 1f;
     private float volume = 1f;
 
@@ -169,20 +170,25 @@ internal sealed class ResidentVoiceContext : ApplicationContext
 
                 if (line is null)
                 {
+                    if (!stopping) messageWindow.BeginInvoke(async () => { await StopAsync(); ExitThread(); });
                     break;
                 }
 
                 try
                 {
                     using var document = JsonDocument.Parse(line);
-                    var command = document.RootElement;
+                    var command = document.RootElement.Clone();
                     if (!command.TryGetProperty("type", out var typeElement) || typeElement.ValueKind != JsonValueKind.String)
                     {
                         continue;
                     }
 
                     var type = typeElement.GetString();
-                    messageWindow.BeginInvoke(async () => await HandleCommandAsync(type, command));
+                    messageWindow.BeginInvoke(async () =>
+                    {
+                        try { if (!stopping) await HandleCommandAsync(type, command); }
+                        catch (Exception error) { Program.EmitError("service_runtime", "VOICE_COMMAND_FAILED", error); }
+                    });
                 }
                 catch (JsonException)
                 {
@@ -275,6 +281,8 @@ internal sealed class ResidentVoiceContext : ApplicationContext
         instance.ContinuousRecognitionSession.ResultGenerated += (_, args) =>
         {
             if (args.Result.Status == SpeechRecognitionResultStatus.Success &&
+                args.Result.Confidence != SpeechRecognitionConfidence.Rejected &&
+                args.Result.Confidence != SpeechRecognitionConfidence.Low &&
                 !string.IsNullOrWhiteSpace(args.Result.Text))
             {
                 Emit("transcript", new { text = args.Result.Text, confidence = args.Result.Confidence.ToString() });
@@ -344,12 +352,15 @@ internal sealed class ResidentVoiceContext : ApplicationContext
 
     private async Task SpeakAsync(string text)
     {
+        using var cancellation = new CancellationTokenSource();
+        speechCancellation = cancellation;
         speaking = true;
         SetTrayState("Respondendo por voz");
         Emit("state", new { state = "speaking", microphoneActive = false });
         await PauseAsync();
         try
         {
+            synthesizer.Options.AudioPitch = 0.9;
             synthesizer.Options.SpeakingRate = speakingRate;
             synthesizer.Options.AudioVolume = volume;
             using var stream = await synthesizer.SynthesizeTextToStreamAsync(text);
@@ -364,32 +375,38 @@ internal sealed class ResidentVoiceContext : ApplicationContext
                 player.Volume = volume;
                 player.Source = MediaSource.CreateFromStream(stream, stream.ContentType);
                 player.Play();
-                await ended.Task.WaitAsync(TimeSpan.FromMinutes(2));
+                await ended.Task.WaitAsync(TimeSpan.FromMinutes(2), cancellation.Token);
             }
             finally
             {
                 player.MediaEnded -= OnEnded;
                 player.MediaFailed -= OnFailed;
-                player.Pause();
-                player.Source = null;
+                if (!stopping) { player.Pause(); player.Source = null; }
             }
         }
+        catch (OperationCanceledException) when (stopping) { }
         catch (Exception error)
         {
             Program.EmitError("speech_playback", "SPEECH_OUTPUT_FAILED", error);
         }
         finally
         {
+            speechCancellation = null;
             speaking = false;
+            if (!stopping)
+            {
             Emit("speech_complete");
             Emit("state", new { state = "awaiting_activation", microphoneActive = false });
             await StartListeningAsync();
+            }
         }
     }
 
     private async Task StopAsync()
     {
+        if (stopping) return;
         stopping = true;
+        speechCancellation?.Cancel();
         await PauseAsync();
         player.Pause();
         trayIcon.Visible = false;

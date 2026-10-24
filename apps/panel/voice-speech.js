@@ -7,7 +7,7 @@ function isBrazilianPortuguese(voice) {
 }
 
 function isMasculineVoice(voice) {
-  return /(?:masculin|male|homem|daniel|antonio|ant[oô]nio|lucas|ricardo|paulo|felipe)/i
+  return /\b(?:masculin[oa]?|male|homem|daniel|antonio|ant[oô]nio|lucas|ricardo|paulo|felipe)\b/i
     .test(`${voice?.name || ''} ${voice?.gender || ''}`);
 }
 

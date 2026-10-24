@@ -1,3 +1,6 @@
+import { createSpotifyPlayer } from '../providers/spotify.mjs';
+import { createFileTools, validateFileAction } from '../files/index.mjs';
+import { runWindowAction, validateWindowAction } from './windows-control.mjs';
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
@@ -158,6 +161,14 @@ export async function runDesktopAction(action, {
   volumeController,
 } = {}, { signal, processManager = createProcessManager() } = {}) {
   throwIfAborted(signal);
+  if(action==='play_spotify'){
+    const valid=validateLocalAction(action,{query});if(!valid)throw new Error('ACTION_NOT_ALLOWED');
+    return createSpotifyPlayer({token:env.SPOTIFY_ACCESS_TOKEN,deviceId:env.SPOTIFY_DEVICE_ID,fetchImpl:fetchPage}).play(valid.params.query,{signal});
+  }
+  const fileAction = validateFileAction(action,arguments[1] || {});
+  if(fileAction)return createFileTools({root:env.JARVIS_FILES_ROOT,signal,processManager,env,platform,spawnProcess}).run(action,fileAction.params);
+  const windowAction = validateWindowAction(action, arguments[1] || {});
+  if (windowAction) return runWindowAction(action,windowAction.params,{signal,processManager});
   if (VOLUME_ACTIONS.has(action)) {
     const allowedOptions = new Set(['platform','env','exists','spawnProcess','volumeController']);
     if (action === 'set_volume') allowedOptions.add('percent');

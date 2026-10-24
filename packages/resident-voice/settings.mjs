@@ -17,8 +17,8 @@ export function validateResidentVoiceSettings(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value) ||
       Object.keys(value).some(key => !['enabled', 'speakingRate', 'volume'].includes(key)) ||
       typeof value.enabled !== 'boolean' ||
-      typeof value.speakingRate !== 'number' || value.speakingRate < 0.75 || value.speakingRate > 1.25 ||
-      typeof value.volume !== 'number' || value.volume < 0 || value.volume > 1) {
+      typeof value.speakingRate !== 'number' || !Number.isFinite(value.speakingRate) || value.speakingRate < 0.75 || value.speakingRate > 1.25 ||
+      typeof value.volume !== 'number' || !Number.isFinite(value.volume) || value.volume < 0 || value.volume > 1) {
     return null;
   }
   return { enabled: value.enabled, speakingRate: value.speakingRate, volume: value.volume };

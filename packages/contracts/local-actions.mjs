@@ -1,3 +1,5 @@
+import { validateFileAction } from '../files/index.mjs';
+import { validateWindowAction } from '../desktop/windows-control.mjs';
 export const LOCAL_APPS = Object.freeze({
   chrome: 'Chrome',
   edge: 'Microsoft Edge',
@@ -44,6 +46,10 @@ function hasOnlyKeys(value, expected) {
 
 export function validateLocalAction(action, params) {
   if (typeof action !== 'string') return null;
+  const fileAction = validateFileAction(action, params);
+  if (fileAction) return fileAction;
+  const windowAction = validateWindowAction(action, params);
+  if (windowAction) return windowAction;
 
   if (action === 'open_app' && hasOnlyKeys(params, ['app']) && Object.hasOwn(LOCAL_APPS, params.app)) {
     return { action, params: { app: params.app } };
@@ -58,7 +64,7 @@ export function validateLocalAction(action, params) {
     params.percent >= 0 && params.percent <= 100) {
     return { action, params: { percent: params.percent } };
   }
-  if ((action === 'search_google' || action === 'search_youtube' || action === 'play_youtube') && hasOnlyKeys(params, ['query']) &&
+  if ((action === 'search_google' || action === 'search_youtube' || action === 'play_youtube' || action === 'play_spotify') && hasOnlyKeys(params, ['query']) &&
     typeof params.query === 'string' && params.query.trim().length > 0 && params.query.trim().length <= 240 &&
     !/[\u0000-\u001f\u007f]/.test(params.query)) {
     return { action, params: { query: params.query.trim() } };
@@ -71,6 +77,22 @@ export function validateLocalAction(action, params) {
 
 export function localActionConfirmation(action, params) {
   switch (action) {
+    case 'files_open': return `Abrir o documento autorizado: ${params.path}`;
+    case 'files_list': return `Listar a pasta autorizada: ${params.path || '(raiz)'}`;
+    case 'files_read': return `Ler o arquivo autorizado: ${params.path}`;
+    case 'files_create': return `Criar ${params.path}, sem sobrescrever arquivos existentes. Conteúdo: ${params.content}`;
+    case 'files_move': return `Mover ${params.path} para ${params.destination}, sem sobrescrever arquivos existentes`;
+    case 'play_spotify': return `Solicitar reprodução no Spotify: ${params.query}`;
+    case 'list_apps': return 'Listar aplicativos autorizados em execução';
+    case 'focus_window': return `Alternar para ${params.app}`;
+    case 'minimize_window': return `Minimizar ${params.app}`;
+    case 'maximize_window': return `Maximizar ${params.app}`;
+    case 'close_app': return `Solicitar fechamento de ${params.app}; pode haver alterações não salvas` ;
+    case 'restart_windows': return 'Reiniciar o Windows; salve seu trabalho antes de aprovar';
+    case 'shutdown_windows': return 'Desligar o Windows; salve seu trabalho antes de aprovar';
+    case 'click_control': return `Acionar o controle “${params.control}” em ${params.app}`;
+    case 'type_text': return `Preencher “${params.control}” em ${params.app} com: ${params.text}`;
+    case 'keyboard_shortcut': return `Atalho ${params.shortcut} em ${params.app}`;
     case 'open_app': return `Abrindo ${LOCAL_APPS[params.app] === 'Explorador de Arquivos' ? 'o Explorador de Arquivos' :
       params.app === 'calculator' ? 'a Calculadora' : params.app === 'settings' ? 'as Configurações do Windows' :
         params.app === 'notepad' ? 'o Bloco de Notas' : params.app === 'vscode' ? 'o Visual Studio Code' :

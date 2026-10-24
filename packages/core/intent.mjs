@@ -94,6 +94,16 @@ export function detectLocalAction(message) {
   if (typeof message !== 'string') return null;
   const spoken = stripConversation(message);
   const normalized = normalize(spoken);
+  const power = { 'reinicie o windows':'restart_windows', 'reinicia o windows':'restart_windows', 'reinicie o computador':'restart_windows', 'desligue o windows':'shutdown_windows', 'desliga o windows':'shutdown_windows', 'desligue o computador':'shutdown_windows' };
+  if (power[normalized]) return validateLocalAction(power[normalized],{});
+  if (/^(?:liste|lista|quais sao) (?:os )?aplicativos (?:abertos|em execucao)$/.test(normalized)) return validateLocalAction('list_apps',{});
+  const windowRequest=/^(minimiza|minimize|maximiza|maximize|fecha|feche|alterna para|alterne para) (?:o |a )?(chrome|edge|bloco de notas|calculadora|paint|spotify|vs code)$/.exec(normalized);
+  if(windowRequest){
+    const app={'bloco de notas':'notepad','calculadora':'calculator','vs code':'vscode'}[windowRequest[2]]||windowRequest[2];
+    const action=/^min/.test(windowRequest[1])?'minimize_window':/^max/.test(windowRequest[1])?'maximize_window':/^fe/.test(windowRequest[1])?'close_app':'focus_window';
+    return validateLocalAction(action,{app});
+  }
+
 
   const volumeValue = /^(?:volume\s+(?:(?:em|para|no)\s+)?|(?:coloca|coloque|bota|bote|deixa|deixe)\s+(?:(?:o|no)\s+)?volume\s+(?:(?:em|para|no)\s+)?)([+-]?\d+(?:[.,]\d+)?)\s*%?$/iu.exec(spoken);
   if (volumeValue) {
@@ -116,6 +126,8 @@ export function detectLocalAction(message) {
     return validateLocalAction('set_volume',{percent:100});
   }
 
+  const spotify=/^(?:toca|toque|reproduza|reproduz|coloca|coloque)\s+(.+?)\s+no spotify$/iu.exec(spoken);
+  if(spotify)return validateLocalAction('play_spotify',{query:spotify[1]});
   const youtubeIntent = detectYoutubeIntent(spoken);
   if (youtubeIntent) return youtubeIntent;
 

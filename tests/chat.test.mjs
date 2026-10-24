@@ -12,7 +12,7 @@ let nextPort=18789;
 const structuredReply=reply=>JSON.stringify({type:'reply',reply});
 async function withServer(options, run) {
  const port=nextPort++, origin=`http://127.0.0.1:${port}`, directory=await mkdtemp(join(tmpdir(),'jarvis-chat-test-'));
- const {server}=createServer({port,memoryFilePath:join(directory,'runtime','memory.json'),openaiApiKey:'',openaiEnabled:false,openrouterApiKey:'',googleApiKey:'',...options});
+ const {server}=createServer({requireActionApproval:false,port,memoryFilePath:join(directory,'runtime','memory.json'),openaiApiKey:'',openaiEnabled:false,openrouterApiKey:'',googleApiKey:'',...options});
  await new Promise(resolve=>server.listen(port,'127.0.0.1',resolve));
  const request=async(path,data,headers={})=>{
   const response=await fetch(origin+path,{method:data===undefined?'GET':'POST',headers:{...(data===undefined?{}:{'Content-Type':'application/json',Origin:origin}),...headers},body:data===undefined?undefined:JSON.stringify(data)});

@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process';
 import { createInterface } from 'node:readline';
 import { access } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { processEnvironment } from '../security/process-environment.mjs';
@@ -17,7 +18,7 @@ function findDotnetPath(env) {
     path.join(env.ProgramFiles || 'C:\\Program Files', 'dotnet', 'dotnet.exe'),
     path.join(env.LOCALAPPDATA || '', 'Microsoft', 'dotnet', 'dotnet.exe'),
   ];
-  return candidates.find(candidate => candidate && candidate !== 'dotnet.exe');
+  return candidates.find(candidate => candidate && existsSync(candidate));
 }
 
 function runBuild(dotnetPath, { spawnProcess, env }) {
@@ -29,18 +30,23 @@ function runBuild(dotnetPath, { spawnProcess, env }) {
       windowsHide: true,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
+    const timer = setTimeout(() => {
+      child.kill();
+      reject(Object.assign(new Error('A compilação do módulo de voz excedeu o prazo.'), {code:'VOICE_BUILD_FAILED',stage:'helper_build'}));
+    }, 120000);
     let diagnostics = '';
     const collect = chunk => {
       diagnostics = `${diagnostics}${chunk.toString('utf8')}`.slice(-6000);
     };
     child.stdout.on('data', collect);
     child.stderr.on('data', collect);
-    child.once('error', error => reject(Object.assign(new Error('Não foi possível iniciar a compilação do módulo de voz.'), {
+    child.once('error', error => { clearTimeout(timer); reject(Object.assign(new Error('Não foi possível iniciar a compilação do módulo de voz.'), {
       code: 'VOICE_BUILD_FAILED',
       stage: 'helper_build',
       exceptionType: error.name,
-    })));
+    })); });
     child.once('close', code => {
+      clearTimeout(timer);
       if (code !== 0) {
         reject(Object.assign(new Error('A compilação do módulo de voz falhou.'), {
           code: 'VOICE_BUILD_FAILED',
@@ -104,9 +110,11 @@ export function createResidentVoiceService({
   };
 
   const say = (text, purpose) => {
+    if (typeof text !== 'string' || !text.trim()) text = 'Não há uma resposta para falar.';
+    text = text.length > 2500 ? `${text.slice(0, 2499)}…` : text;
     activeSpeech = purpose;
     if (purpose === 'reply') gate.setSpeaking();
-    emitState('speaking', false);
+    notifyState('speaking', false);
     if (!send({ type: 'speak', text, rate: settings.speakingRate, volume: settings.volume })) {
       onError({ code: 'VOICE_BRIDGE_UNAVAILABLE' });
     }
@@ -121,6 +129,8 @@ export function createResidentVoiceService({
 
   const stopChild = async ({ disable = true } = {}) => {
     lifecycleGeneration++;
+    activeSpeech = null;
+    pendingCommand = false;
     enabled = false;
     shuttingDown = true;
     clearTimers();
@@ -151,18 +161,19 @@ export function createResidentVoiceService({
   const processCommand = async command => {
     if (pendingCommand || !enabled) return;
     pendingCommand = true;
+    const generation = lifecycleGeneration;
     clearTimeout(commandWindowTimer);
     send({ type: 'pause' });
     notifyState('processing', false);
     try {
       const reply = await onTranscript(command);
-      if (!enabled || shuttingDown) return;
+      if (!enabled || shuttingDown || generation !== lifecycleGeneration) return;
       say(reply, 'reply');
     } catch {
-      if (enabled && !shuttingDown) say('Não consegui concluir o pedido agora. Tente novamente.', 'reply');
+      if (enabled && !shuttingDown && generation === lifecycleGeneration) say('Não consegui concluir o pedido agora. Tente novamente.', 'reply');
       onError({ code: 'VOICE_REQUEST_FAILED' });
     } finally {
-      pendingCommand = false;
+      if (generation === lifecycleGeneration) pendingCommand = false;
     }
   };
 
@@ -182,6 +193,7 @@ export function createResidentVoiceService({
       return;
     }
     if (message.type === 'transcript' && typeof data.text === 'string') {
+      if (!enabled || activeSpeech || ['Low', 'Rejected'].includes(data.confidence)) return;
       retryCount = 0;
       const recognition = gate.consume(data.text);
       if (!recognition) return;
@@ -293,6 +305,7 @@ export function createResidentVoiceService({
       const lines = createInterface({ input: current.stdout });
       lines.on('line', line => {
         try {
+          if (child !== current || generation !== lifecycleGeneration) return;
           void handleMessage(JSON.parse(line)).catch(() => onError({ code: 'VOICE_BRIDGE_MESSAGE_FAILED' }));
         } catch {
           onError({ code: 'VOICE_BRIDGE_INVALID_OUTPUT' });
@@ -350,7 +363,14 @@ export function createResidentVoiceService({
           }));
         }, 15000);
       });
-    })().finally(() => {
+    })().catch(async error => {
+      if (generation === lifecycleGeneration) {
+        await stopChild();
+        gate.fail();
+        notifyState('error', false);
+      }
+      throw error;
+    }).finally(() => {
       clearTimeout(readyTimer);
       readyTimer = null;
       readyResolve = readyReject = null;
@@ -372,7 +392,7 @@ export function createResidentVoiceService({
     stop,
     updateSettings,
     get status() {
-      return { enabled, state: enabled ? lastState : 'disabled', microphoneActive: enabled && microphoneActive };
+      return { enabled, state: lastState, microphoneActive: enabled && microphoneActive };
     },
   };
 }
